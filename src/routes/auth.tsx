@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { checkWorkEmail } from "@/lib/work-email";
 
 export const Route = createFileRoute("/auth")({
@@ -89,17 +88,20 @@ function AuthPage() {
 
   async function handleGoogle() {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    // Native Supabase OAuth — redirects straight to Google using your own
+    // Supabase project's configured Google OAuth credentials (Authentication
+    // → Providers → Google in the Supabase dashboard), no Lovable broker
+    // involved. Supabase itself redirects back to /leads on success.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/leads` },
     });
-    if (result.error) {
+    if (error) {
       setBusy(false);
-      toast.error("Google sign-in failed. Please try again.");
+      toast.error(`Google sign-in failed: ${error.message}`);
       return;
     }
-    if (result.redirected) return;
-    await supabase.rpc("bootstrap_org", { _org_name: "" });
-    navigate({ to: "/leads" });
+    // Browser is now navigating away to Google; nothing else to do here.
   }
 
   return (
