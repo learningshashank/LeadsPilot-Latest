@@ -4,8 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    // getSession() reads the persisted session directly (fast, no network
+    // round-trip) rather than getUser()'s server verification call — this
+    // matters right after an OAuth redirect, where a slower check could
+    // race against session establishment and incorrectly bounce the user
+    // back to /auth.
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session?.user) throw redirect({ to: "/auth" });
+    const user = data.session.user;
 
     // Ensure an organization exists for this user. Safe to call on every
     // authenticated page load: bootstrap_org is expected to be idempotent
@@ -18,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
       console.error("[bootstrap_org] failed:", bootstrapError.message);
     }
 
-    return { user: data.user };
+    return { user };
   },
   component: () => <Outlet />,
 });

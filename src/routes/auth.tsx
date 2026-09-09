@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkWorkEmail } from "@/lib/work-email";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   validateSearch: z.object({ mode: z.enum(["login", "signup"]).optional() }),
   head: () => ({
     meta: [
