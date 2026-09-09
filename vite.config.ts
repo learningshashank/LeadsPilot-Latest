@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Hard-pin the Nitro build target to Vercel. Without this, nitro defaults to
+  // the "cloudflare-module" preset, which produces server output Vercel can't
+  // route correctly — static pages load, but every server-rendered route
+  // (auth, server functions, etc.) 404s. See: /~oauth/initiate 404 on Vercel.
+  nitro: {
+    preset: "vercel",
+  },
 });
