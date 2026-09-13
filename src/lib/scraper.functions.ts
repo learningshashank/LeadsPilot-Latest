@@ -359,6 +359,6 @@ export const runSearchGenerate = createServerFn({ method: "POST" })
 export const getApiKeyStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const keys = ["HUNTER_API_KEY", "APOLLO_API_KEY", "PDL_API_KEY", "BOUNCER_API_KEY"] as const;
+    const keys = ["HUNTER_API_KEY", "APOLLO_API_KEY", "PDL_API_KEY", "BOUNCER_API_KEY", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] as const;
     return keys.map((name) => ({ name, configured: Boolean(process.env[name]) }));
   });

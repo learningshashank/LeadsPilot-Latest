@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Plus, ArrowUpDown } from "lucide-react";
+import { Download, ArrowUpDown } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +67,6 @@ function LeadsPage() {
   const [seniority, setSeniority] = useState("");
   const [verification, setVerification] = useState("");
   const [stage, setStage] = useState("");
-  const [activeList, setActiveList] = useState<string | null>(null);
   const [sortDesc, setSortDesc] = useState(true);
 
   const leadsQuery = useQuery({
@@ -84,28 +83,8 @@ function LeadsPage() {
     },
   });
 
-  const listsQuery = useQuery({
-    queryKey: ["lists"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("lists")
-        .select("id, name, color, list_leads(lead_id)")
-        .order("created_at");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
   const rows = useMemo(() => {
-    const listIds = activeList
-      ? new Set(
-          (listsQuery.data ?? [])
-            .filter((l: any) => l.id === activeList)
-            .flatMap((l: any) => l.list_leads.map((x: any) => x.lead_id)),
-        )
-      : null;
     const out = (leadsQuery.data ?? []).filter((l) => {
-      if (listIds && !listIds.has(l.id)) return false;
       if (industry && l.companies?.industry !== industry) return false;
       if (seniority && l.seniority !== seniority) return false;
       if (verification && l.verification_status !== verification) return false;
@@ -123,7 +102,7 @@ function LeadsPage() {
       const bv = b.lead_score ?? -1;
       return sortDesc ? bv - av : av - bv;
     });
-  }, [leadsQuery.data, listsQuery.data, activeList, industry, seniority, verification, stage, search, sortDesc]);
+  }, [leadsQuery.data, industry, seniority, verification, stage, search, sortDesc]);
 
   const industries = useMemo(
     () =>
@@ -179,49 +158,6 @@ function LeadsPage() {
       }
     >
       <div className="flex gap-6">
-        <aside className="hidden w-56 shrink-0 lg:block">
-          <div className="surface-card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold">Lists</h2>
-              <Plus className="size-4 text-muted-foreground" />
-            </div>
-            <div className="mt-3 space-y-1">
-              <button
-                onClick={() => setActiveList(null)}
-                className={cn(
-                  "w-full rounded-lg px-2 py-1.5 text-left text-sm",
-                  !activeList ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                )}
-              >
-                All leads ({leadsQuery.data?.length ?? 0})
-              </button>
-              {(listsQuery.data ?? []).map((l: any) => (
-                <button
-                  key={l.id}
-                  onClick={() => setActiveList(l.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm",
-                    activeList === l.id
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  <span
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: l.color }}
-                  />
-                  {l.name} ({l.list_leads.length})
-                </button>
-              ))}
-              {!listsQuery.data?.length ? (
-                <p className="px-2 py-1 text-xs text-muted-foreground">
-                  No saved lists yet.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </aside>
-
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Input
